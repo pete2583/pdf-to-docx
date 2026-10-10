@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 
 # Modern Adobe PDF Services SDK v4+ imports
 from adobe.pdfservices.operation.auth.service_principal_credentials import ServicePrincipalCredentials
@@ -11,11 +12,9 @@ from adobe.pdfservices.operation.pdfjobs.result.export_pdf_result import ExportP
 
 st.set_page_config(page_title="Official Adobe PDF to DOCX", layout="centered")
 
-# --- SIDEBAR FOR CREDENTIALS ---
-st.sidebar.title("🔑 Adobe API Credentials")
-st.sidebar.markdown("Get these from the [Adobe Developer Console](https://developer.adobe.com/document-services/).")
-client_id = st.sidebar.text_input("Client ID", type="password")
-client_secret = st.sidebar.text_input("Client Secret", type="password")
+# --- FETCH CREDENTIALS FROM ENVIRONMENT VARIABLES ---
+CLIENT_ID = os.environ.get("ADOBE_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("ADOBE_CLIENT_SECRET")
 
 # --- MAIN APP ---
 st.title("📄 PDF to DOCX (Adobe Engine)")
@@ -26,18 +25,19 @@ uploaded_file = st.file_uploader("Select a PDF file", type=["pdf"])
 
 if uploaded_file is not None:
     
-    if not client_id or not client_secret:
-        st.warning("⚠️ Please enter your Adobe Client ID and Client Secret in the sidebar first.")
+    # Check if the environment variables were successfully passed in
+    if not CLIENT_ID or not CLIENT_SECRET:
+        st.error("⚠️ Adobe credentials are missing. Please add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET as environment variables in Portainer.")
     else:
         st.info("File uploaded successfully. Click below to process using Adobe's servers.")
         
         if st.button("Process File (Costs 1 Adobe Transaction)"):
             with st.spinner("Uploading and processing on Adobe's servers..."):
                 try:
-                    # 1. Setup Adobe API Credentials
+                    # 1. Setup Adobe API Credentials using the hidden variables
                     credentials = ServicePrincipalCredentials(
-                        client_id=client_id,
-                        client_secret=client_secret
+                        client_id=CLIENT_ID,
+                        client_secret=CLIENT_SECRET
                     )
                     pdf_services = PDFServices(credentials=credentials)
 
