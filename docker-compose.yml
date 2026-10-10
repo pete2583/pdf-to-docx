@@ -5,6 +5,9 @@ services:
     build: .
     container_name: adobe-pdf-converter
     restart: unless-stopped
+    environment:
+      - ADOBE_CLIENT_ID=${ADOBE_CLIENT_ID}
+      - ADOBE_CLIENT_SECRET=${ADOBE_CLIENT_SECRET}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pdf-converter.entrypoints=https"
