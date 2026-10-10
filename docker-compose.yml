@@ -4,6 +4,19 @@ services:
   pdf-converter:
     build: .
     container_name: adobe-pdf-converter
-    ports:
-      - "8501:8501"
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.entrypoints=https"
+      - "traefik.http.routers.prowlarr.rule=Host(`${APP_DOMAIN}`)"
+      - "traefik.http.routers.prowlarr.tls=true"
+      - "traefik.http.routers.prowlarr.tls.certresolver=http"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=8501"
+      - "traefik.docker.network=proxy"
+    networks:
+      - default
+
+networks:
+  default:
+    external:
+      name: proxy
