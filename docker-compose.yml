@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  pdf-converter:
+    build: .
+    container_name: adobe-pdf-converter
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
