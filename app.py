@@ -10,7 +10,7 @@ from adobe.pdfservices.operation.pdfjobs.params.export_pdf.export_pdf_target_for
 from adobe.pdfservices.operation.pdfjobs.jobs.export_pdf_job import ExportPDFJob
 from adobe.pdfservices.operation.pdfjobs.result.export_pdf_result import ExportPDFResult
 
-st.set_page_config(page_title="Official Adobe PDF to DOCX", layout="centered")
+st.set_page_config(page_title="Unofficial Adobe PDF to DOCX", layout="centered")
 
 # --- FETCH SECRETS FROM ENVIRONMENT VARIABLES ---
 CLIENT_ID = os.environ.get("ADOBE_CLIENT_ID")
