@@ -19,21 +19,17 @@ APP_PASSWORD = os.environ.get("APP_PASSWORD")
 
 # --- PASSWORD PROTECTION LOGIC ---
 def check_password():
-    # Fail-safe just in case the variable isn't set in Portainer
     if not APP_PASSWORD:
         st.error("⚠️ Server configuration error: APP_PASSWORD is not set in environment variables.")
         return False
 
-    # Initialize the session state so it remembers if you are logged in
     if "password_correct" not in st.session_state:
         st.session_state["password_correct"] = False
 
-    # If not logged in, show the login screen
     if not st.session_state["password_correct"]:
         st.title("🔒 Access Restricted")
         st.markdown("Please enter the password to use this tool.")
         
-        # We use a form so the user can just press 'Enter' on their keyboard
         with st.form("login_form"):
             pwd = st.text_input("Password", type="password")
             submitted = st.form_submit_button("Login")
@@ -41,29 +37,41 @@ def check_password():
             if submitted:
                 if pwd == APP_PASSWORD:
                     st.session_state["password_correct"] = True
-                    st.rerun()  # Instantly reloads the page to show the app
+                    st.rerun()
                 else:
                     st.error("Incorrect password. Please try again.")
         return False
         
     return True
 
-# --- MAIN APP (Only runs if password is correct) ---
+# --- MAIN APP ---
 if check_password():
     st.title("📄 PDF to DOCX (Adobe Engine)")
-    st.markdown("This uses the official Adobe PDF Services API for flawless reconstruction.")
+    st.markdown("Batch convert PDFs to Word using the official Adobe PDF Services API.")
 
-    # File uploader
-    uploaded_file = st.file_uploader("Select a PDF file", type=["pdf"])
+    # File uploader (Accepts multiple files)
+    uploaded_files = st.file_uploader("Select PDF files", type=["pdf"], accept_multiple_files=True)
 
-    if uploaded_file is not None:
+    if uploaded_files:
         if not CLIENT_ID or not CLIENT_SECRET:
-            st.error("⚠️ Adobe credentials are missing. Please add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET as environment variables in Portainer.")
+            st.error("⚠️ Adobe credentials are missing. Please add ADOBE_CLIENT_ID and ADOBE_CLIENT_SECRET in Portainer.")
         else:
-            st.info("File uploaded successfully. Click below to process using Adobe's servers.")
+            file_count = len(uploaded_files)
+            st.info(f"{file_count} file(s) ready for processing.")
             
-            if st.button("Process File (Costs 1 Adobe Transaction)"):
-                with st.spinner("Uploading and processing on Adobe's servers..."):
+            if st.button(f"Process {file_count} File(s) (Costs {file_count} Adobe Transactions)"):
+                
+                # Clear any previously converted files from memory
+                st.session_state["converted_files"] = []
+                
+                # UI Elements for progress
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+
+                # Loop through all uploaded files
+                for i, uploaded_file in enumerate(uploaded_files):
+                    status_text.text(f"Processing {uploaded_file.name} ({i+1}/{file_count})...")
+                    
                     try:
                         # 1. Setup Adobe API Credentials
                         credentials = ServicePrincipalCredentials(
@@ -95,15 +103,30 @@ if check_password():
                         stream_asset = pdf_services.get_content(result_asset)
                         docx_bytes = stream_asset.get_input_stream()
                         
-                        st.success("Conversion Complete!")
-                        
-                        # 6. Provide the download button
-                        st.download_button(
-                            label="Download DOCX",
-                            data=docx_bytes,
-                            file_name=f"{uploaded_file.name.replace('.pdf', '')}_converted.docx",
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        )
+                        # Save the bytes and filename to session state so it survives page reloads
+                        out_name = f"{uploaded_file.name.replace('.pdf', '')}_converted.docx"
+                        st.session_state["converted_files"].append((out_name, docx_bytes))
                         
                     except Exception as e:
-                        st.error(f"An error occurred during Adobe processing: {e}")
+                        st.error(f"Error processing {uploaded_file.name}: {e}")
+                        
+                    # Update progress bar
+                    progress_bar.progress((i + 1) / file_count)
+                
+                status_text.text("All processing complete!")
+                st.success(f"Successfully converted {len(st.session_state['converted_files'])} file(s)!")
+
+    # --- DOWNLOAD SECTION ---
+    # We display this outside the button loop so downloads survive page refreshes
+    if "converted_files" in st.session_state and st.session_state["converted_files"]:
+        st.markdown("### 📥 Download Converted Files")
+        
+        # Display individual download buttons for every file
+        for file_name, file_bytes in st.session_state["converted_files"]:
+            st.download_button(
+                label=f"Download {file_name}",
+                data=file_bytes,
+                file_name=file_name,
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                key=file_name # Unique key required when generating buttons in a loop
+            )
