@@ -104,7 +104,7 @@ if check_password():
                         docx_bytes = stream_asset.get_input_stream()
                         
                         # Save the bytes and filename to session state so it survives page reloads
-                        out_name = f"{uploaded_file.name.replace('.pdf', '')}_converted.docx"
+                        out_name = f"{uploaded_file.name.replace('.pdf', '')}.docx"
                         st.session_state["converted_files"].append((out_name, docx_bytes))
                         
                     except Exception as e:
