@@ -8,6 +8,7 @@ services:
     environment:
       - ADOBE_CLIENT_ID=${ADOBE_CLIENT_ID}
       - ADOBE_CLIENT_SECRET=${ADOBE_CLIENT_SECRET}
+      - APP_PASSWORD=${APP_PASSWORD}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pdf-converter.entrypoints=https"
